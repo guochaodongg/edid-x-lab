@@ -1,34 +1,22 @@
-# EDID Craft Local · 离线 EDID 工具箱
+# EDID-X-LAB · EDID 工具箱
 
-对 [edidcraft.com](https://edidcraft.com/) 全部功能的**离线复刻**：解析（Decoder）、生成（Encoder）、校验（Validator）、时序计算（Timing Calculator），外加一页 EDID 速成课。
+对 [edidcraft.com](https://edidcraft.com/) 全部功能的**完整复刻**：解析（Decoder）、生成（Encoder）、校验（Validator）、时序计算（Timing Calculator），外加一页 EDID 速成课。
 
-- **零依赖**：没有后端、没有 API 请求、不加载任何 CDN。图标是内联 SVG，字体用系统字体栈。
-- **双击即用**：直接打开 `index.html` 就能跑（`file://` 协议下也正常）。
-- **随处部署**：纯静态文件，可直接放到 GitHub Pages / Cloudflare Pages / 任意静态服务器。
-- **数据不外流**：所有计算都在你的浏览器里完成，EDID 内容不会离开本机。
+- **纯静态**：`index.html` + `css/` + `js/`，可直接放到 GitHub Pages / Cloudflare Pages / 任意静态服务器。
+- **前端实现**：解析、生成、校验与时序计算全部由浏览器端 JavaScript 完成。
 
-**在线地址**：<https://guochaodongg.github.io/edid-x-lab/>
-**仓库地址**：<https://github.com/guochaodongg/edid-x-lab>
+| 项 | 值 |
+| --- | --- |
+| 在线地址 | <https://guochaodongg.github.io/edid-x-lab/> |
+| GitHub 仓库（主） | <https://github.com/guochaodongg/edid-x-lab> |
+| Gitee 仓库（国内镜像） | <https://gitee.com/guochaodong_admin/edid-x-lab> |
+| 本地目录名 | `edid-x-lab` |
 
----
-
-## 1. 本地打开
-
-```
-双击 edidcraft-local/index.html
-```
-
-不需要 Node、不需要 Python、不需要起服务器。Windows / macOS / Linux 上的 Chrome、Edge、Firefox、Safari 都可以。
-
-> 想用本地服务器打开也行（可选）：
-> ```bash
-> cd edidcraft-local
-> python -m http.server 8080     # 然后访问 http://localhost:8080
-> ```
+> 项目名、仓库名与本地目录名统一为 **edid-x-lab**（页面品牌名写作 **EDID-X-LAB**）；本文所有命令示例都以目录名 `edid-x-lab` 为准。
 
 ---
 
-## 2. 功能清单
+## 1. 功能清单
 
 | 标签页 | 能力 |
 | --- | --- |
@@ -37,16 +25,16 @@
 | **校验** | 结构、固定头、块长度、逐块校验和、扩展块数量一致性、日期范围、色度合法性与 sRGB 一致性、时序自洽、描述符格式（文本终止符、范围限制填充、CVT 参数）、CEA/VSDB/HDR/色度块一致性；按**错误 / 警告 / 提示**三级报告 |
 | **时序计算** | VESA **CVT 1.1**（标准消隐）与 **CVT 1.2**（RB / RBv2 / RBv3）、**GTF 1.1**（含隔行与缩边）；输出完整参数表、消隐结构图、X11 `Modeline`、`xrandr --newmode` / `--addmode`，以及可直接写进 DTD 的 18 字节 |
 | **学习 EDID** | 8 节速成课：EDID 是什么、基础块字节地图、四种描述符、18 字节 DTD 逐字节解释、CEA-861 与 DisplayID、CVT/GTF 原理、常见坑、参考资料 |
-| **关于** | 部署说明、本地开发说明、清除本地草稿 |
+| **关于** | 项目介绍、部署说明、开发说明、清除草稿 |
 
 附加能力：拖放 `.bin` / `.hex` / `.txt` / `.dat` / `.edid` 文件、粘贴任意十六进制文本（空格/换行/逗号/`0x` 前缀自动忽略）、`.bin/.hex` 导出、复制到剪贴板、打印 / 存 PDF、深色/浅色主题、自动保存草稿到 `localStorage`、**解析结果一键送进生成器**。
 
 ---
 
-## 3. 目录结构
+## 2. 目录结构
 
 ```
-edidcraft-local/
+edid-x-lab/
 ├── index.html              # 页面骨架 + 内联 SVG 图标 + 各标签页内容
 ├── css/
 │   └── styles.css          # 设计系统（浅色/深色变量、组件、打印样式）
@@ -61,13 +49,13 @@ edidcraft-local/
 └── README.md
 ```
 
-脚本按 `core → timing → decoder → encoder → validator → report → app` 的顺序加载，**顺序不能改**（都是普通 `<script>`，不是 ES module，这样才能在 `file://` 下工作）。
+脚本按 `core → timing → decoder → encoder → validator → report → app` 的顺序加载，**顺序不能改**（都是普通 `<script>`，不是 ES module）。
 
 ---
 
-## 4. 部署状态与更新流程（GitHub Pages）
+## 3. 部署状态与更新流程（GitHub Pages）
 
-### 4.1 当前部署信息
+### 3.1 当前部署信息
 
 | 项 | 值 |
 | --- | --- |
@@ -79,10 +67,10 @@ edidcraft-local/
 
 站点文件就在仓库**根目录**（`index.html` + `css/` + `js/`），所以访问路径最短、没有多余的一层目录。
 
-### 4.2 日常更新
+### 3.2 日常更新
 
 ```bash
-cd edidcraft-local
+cd edid-x-lab
 git add -A
 git commit -m "描述这次改了什么"
 git push
@@ -90,20 +78,20 @@ git push
 
 GitHub Pages 会在推送后**自动重新构建**（约 30–90 秒），不需要手动点任何按钮 —— 这一点比 Gitee Pages 省事得多。
 
-### 4.3 从零部署到别的仓库（换账号或换名字时）
+### 3.3 从零部署到别的仓库（换账号或换名字时）
 
 ```bash
-cd edidcraft-local
+cd edid-x-lab
 git init -b master
 git add .
-git commit -m "EDID Craft Local: offline EDID toolkit"
+git commit -m "EDID-X-LAB: EDID toolkit"
 git remote add origin https://github.com/<你的用户名>/<仓库名>.git
 git push -u origin master
 ```
 
 然后在仓库 **Settings → Pages** 里把 **Source** 设为 `Deploy from a branch`，**Branch** 选 `master` + `/(root)`，保存即可。
 
-### 4.3 几点提醒
+### 3.4 几点提醒
 
 - 本项目全部用**相对路径**引用资源，所以放在子目录（如 `/edidcraft/`）里也能正常工作。
 - 仓库里加一个空的 `.nojekyll` 文件可以跳过 Jekyll 处理（本项目的资源目录不以 `_` 开头，其实不加也没问题）。
@@ -112,7 +100,7 @@ git push -u origin master
 
 ---
 
-## 5. 为什么没有部署到 Gitee Pages
+## 4. 为什么没有部署到 Gitee Pages
 
 **Gitee Pages 已经停服，无法再使用**，所以本项目最终落在 GitHub Pages。这不是配置问题：
 
@@ -127,9 +115,9 @@ git push -u origin master
 
 ---
 
-## 6. 部署到其他静态托管
+## 5. 部署到其他静态托管
 
-因为是纯静态文件，以下平台都可以直接用（构建命令留空、输出目录填 `edidcraft-local` 或 `.`）：
+因为是纯静态文件，以下平台都可以直接用（构建命令留空、输出目录填 `edid-x-lab` 或 `.`）：
 
 - **Cloudflare Pages** / **Netlify** / **Vercel** — 拖拽文件夹即可
 - **对象存储** — 阿里云 OSS、腾讯云 COS、七牛等，开启静态网站托管后上传整个目录
@@ -137,7 +125,7 @@ git push -u origin master
 
 ---
 
-## 7. 复用引擎（二次开发）
+## 6. 复用引擎（二次开发）
 
 引擎文件都是普通脚本，会挂到 `window` 上，可以脱离界面单独使用：
 
@@ -172,40 +160,78 @@ git push -u origin master
 | 全局对象 | 内容 |
 | --- | --- |
 | `EDIDCore` | 常量表（`ESTABLISHED`、`CEA_VIDEO_CODES`、`SPEAKER_ALLOCATION`…）与工具（`bytesToHex`、`checksum`、`manufacturerFromBytes`、`chromaToXy`、`sRGBChromaticity`、`establishedKey`…） |
-| `EDIDTiming` | `computeCVT`、`computeGTF`、`modeline`、`xrandrNewmode`、`xrandrAddMode`、`xrandrAddOutput`、`timingRows`、`PRESETS` |
-| `EDIDDecoder` | `decode(bytes)` |
+| `EDIDTiming` | `computeCVT`、`computeGTF`、`verticalSyncFor`、`modeName`、`modeline`、`xrandrNewmode`、`xrandrAddMode`、`xrandrAddOutput`、`timingRows`、`compare(cvt, gtf)`、`PRESETS` |
+| `EDIDDecoder` | `decode(bytes)`、`decodeHexString(hex)`、`parseBase`、`parseDescriptor`、`parseDTD` |
 | `EDIDEncoder` | `encode(model)`、`defaultModel()`、`defaultDTD()`、`dtdFromTiming()`、`packDTD()`、`ceaHdExtension()`、`cea4kExtension()`、`FORMAT_PRESETS`（`1080p` / `1440p` / `4k` / `ultrawide` / `laptop` / `legacy` / `hdr`） |
-| `EDIDValidator` | `validate(bytes)` |
+| `EDIDValidator` | `validate(bytes)`、`checkDTD(dtd)` |
 | `EDIDReport` | `decodeReport`、`validationReport`、`timingReport`、`hexViewer`、`chromaPlot`、`kv`、`card`、`chip`、`tableHtml`、`esc` |
 
 ---
 
-## 8. 自测
+## 7. 自测
 
-引擎与渲染层自带 Node 测试脚本（在上一级目录的 `_ref/` 里），不需要任何第三方包：
+> 发布仓库只包含 `index.html` + `css/` + `js/`，**不含测试脚本**。下面的两种方式都不需要安装任何第三方包，可随时用来验证引擎是否完好。
 
-```bash
-cd _ref
-node test-edid.js       # 引擎：编解码往返、7 套预设、校验规则
-node test-timing.js     # 时序：CVT/GTF 各分辨率与刷新率矩阵
-node test-render.js     # 渲染：所有预设的解析/校验/时序报告，检查 undefined/NaN、标签闭合
+### 7.1 Node 里跑一遍（推荐）
+
+引擎文件是普通脚本，用 `vm.runInThisContext` 在同一个全局上下文里依次加载即可（它们靠 `window`/`global` 互相引用，所以**必须共享同一个上下文**）：
+
+```js
+// check.js —— 放在 edid-x-lab/ 下，执行：node check.js
+const fs = require('fs'), vm = require('vm');
+['edid-core', 'timing', 'edid-decoder', 'edid-encoder', 'edid-validator', 'edid-report']
+  .forEach(f => vm.runInThisContext(fs.readFileSync('js/' + f + '.js', 'utf8'), { filename: f }));
+
+// 1) 7 套预设：组包 → 自校验，应当零错误
+Object.keys(EDIDEncoder.FORMAT_PRESETS).forEach(key => {
+  const m = EDIDEncoder.defaultModel();
+  EDIDEncoder.FORMAT_PRESETS[key].apply(m);
+  const out = EDIDEncoder.encode(m);
+  const v = EDIDValidator.validate(out.bytes);
+  console.log(key.padEnd(10), out.bytes.length + 'B', v.status, 'err=' + v.errors.length, 'warn=' + v.warnings.length);
+});
+
+// 2) 编解码往返：encode → decode，厂商/产品码应当一致
+const m = EDIDEncoder.defaultModel();
+EDIDEncoder.FORMAT_PRESETS['4k'].apply(m);
+const bytes = EDIDEncoder.encode(m).bytes;
+const d = EDIDDecoder.decode(bytes);
+console.log(d.ok, d.base.manufacturer, d.base.productCode);
+
+// 3) 时序：CVT 与 GTF 对比
+const cvt = EDIDTiming.computeCVT({ width: 2560, height: 1440, refreshRate: 144, rbVersion: 2 });
+const gtf = EDIDTiming.computeGTF({ width: 2560, height: 1440, refreshRate: 144 });
+console.log(EDIDTiming.modeline(cvt));
+console.log(EDIDTiming.compare(cvt, gtf).recommendation);
 ```
 
-界面层另有一个端到端测试，用 jsdom 真实加载 `index.html` 并模拟点击、输入、拖放。jsdom 不是项目依赖，装在工作目录之外即可：
+### 7.2 浏览器控制台里跑一遍
+
+打开页面后按 F12，在控制台直接输入（引擎已挂在 `window` 上）：
+
+```js
+Object.keys(EDIDEncoder.FORMAT_PRESETS).map(k => {
+  const m = EDIDEncoder.defaultModel();
+  EDIDEncoder.FORMAT_PRESETS[k].apply(m);
+  const v = EDIDValidator.validate(EDIDEncoder.encode(m).bytes);
+  return k + ' → ' + v.status + ' / err=' + v.errors.length;
+});
+```
+
+### 7.3 界面层
+
+界面（`app.js`）依赖真实 DOM，需要 [jsdom](https://www.npmjs.com/package/jsdom) 才能自动化。jsdom **不是**项目依赖，装在目录之外即可，避免污染这个纯静态仓库：
 
 ```bash
-# 在一个临时目录里装一次 jsdom
 mkdir /tmp/edid-domtest && cd /tmp/edid-domtest && npm install jsdom
-
-cd <项目>/_ref
-NODE_PATH=/tmp/edid-domtest/node_modules node test-app-dom.js
+NODE_PATH=/tmp/edid-domtest/node_modules node your-dom-test.js
 ```
 
 Windows 上把 `NODE_PATH` 换成 `C:\...\edid-domtest\node_modules` 即可。
 
 ---
 
-## 9. 已知边界
+## 8. 已知边界
 
 - **DisplayID** 只解析到“分节”层级（标签/版本/长度/偏移），不做逐节内容解释；生成器也按分节字节原样写入。
 - **VTB** 与**块映射表**同样只做结构与标签层面的处理。
@@ -215,6 +241,6 @@ Windows 上把 `NODE_PATH` 换成 `C:\...\edid-domtest\node_modules` 即可。
 
 ---
 
-## 10. 说明
+## 9. 说明
 
 本项目的代码与文案为独立实现，功能对标 edidcraft.com。EDID / CEA-861 / DisplayID / CVT / GTF 的具体细节请以 VESA 与 CTA 官方规范为准。

@@ -1,7 +1,7 @@
 /* ==========================================================================
-   EDID Craft Local — edid-core.js
+   EDID-X-LAB — edid-core.js
    Shared constants, byte helpers and lookup tables.
-   Zero dependencies. Works from file:// (classic script, no modules).
+   Zero dependencies (classic script, no modules).
    ========================================================================== */
 (function (global) {
   'use strict';

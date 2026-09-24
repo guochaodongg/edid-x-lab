@@ -1,5 +1,5 @@
 /* ==========================================================================
-   EDID Craft Local — edid-decoder.js
+   EDID-X-LAB — edid-decoder.js
    Full structural decode of a base block plus every extension block.
    ========================================================================== */
 (function (global) {

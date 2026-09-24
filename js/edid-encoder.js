@@ -1,5 +1,5 @@
 /* ==========================================================================
-   EDID Craft Local — edid-encoder.js
+   EDID-X-LAB — edid-encoder.js
    Builds a complete EDID binary (base block + extension blocks) from the
    encoder form model.
    ========================================================================== */
@@ -661,7 +661,7 @@
             cvtAspectRatios: ['4:3', '16:9', '16:10', '5:4', '15:9']
           }
         },
-        { type: 'product_name', text: 'EDID Craft' },
+        { type: 'product_name', text: 'EDID-X-LAB' },
         { type: 'unused' }
       ],
       extensions: [ceaHdExtension()]

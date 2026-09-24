@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EDID Craft Local — 离线 EDID 解析 / 生成 / 校验 / 时序计算</title>
-<meta name="description" content="完全离线的 EDID 工具箱：解析（Decoder）、生成（Encoder）、校验（Validator）与 VESA CVT/GTF 时序计算，单个网页即可运行，可直接部署到 GitHub Pages 或 Gitee Pages。">
+<title>EDID-X-LAB — EDID 解析 / 生成 / 校验 / 时序计算</title>
+<meta name="description" content="纯前端实现的 EDID 工具箱：解析（Decoder）、生成（Encoder）、校验（Validator）与 VESA CVT/GTF 时序计算，纯静态页面，可直接部署到 GitHub Pages 或任意静态托管。">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Crect x='7' y='7' width='7' height='7' fill='%23fff'/%3E%3Crect x='18' y='7' width='7' height='7' fill='%23fff' opacity='.65'/%3E%3Crect x='7' y='18' width='7' height='7' fill='%23fff' opacity='.65'/%3E%3Crect x='18' y='18' width='7' height='7' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/styles.css">
@@ -64,7 +64,7 @@
   <div class="wrap">
     <div class="brand">
       <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--accent)"/><rect x="7" y="7" width="7" height="7" fill="#fff"/><rect x="18" y="7" width="7" height="7" fill="#fff" opacity=".6"/><rect x="7" y="18" width="7" height="7" fill="#fff" opacity=".6"/><rect x="18" y="18" width="7" height="7" fill="#fff"/></svg>
-      <b>EDID Craft <span>Local</span></b>
+      <b>EDID-X-LAB</b>
     </div>
     <nav class="tabs" role="tablist">
       <button role="tab" aria-selected="true" data-tab="decoder"><svg class="ic"><use href="#i-decode"/></svg>解析</button>
@@ -88,7 +88,7 @@
     <div class="hero">
       <div class="txt">
         <h1>EDID 解析器</h1>
-        <p>把显示器的 EDID（128 字节基础块及其扩展块）粘贴或拖进来，即可得到厂商、产品、制造日期、输入接口、色度坐标、时序与全部描述符的完整解读。所有计算都在本机浏览器里完成，数据不会离开你的电脑。</p>
+        <p>把显示器的 EDID（128 字节基础块及其扩展块）粘贴或拖进来，即可得到厂商、产品、制造日期、输入接口、色度坐标、时序与全部描述符的完整解读。解析、生成与校验全部由浏览器端 JavaScript 完成。</p>
       </div>
       <div class="art">
         <svg width="150" height="86" viewBox="0 0 150 86" aria-hidden="true">
@@ -395,14 +395,14 @@
     <div class="grid cols-2">
       <div class="card"><div class="body">
         <h3>关于本工具</h3>
-        <p>这是一个 <b>完全离线</b> 的 EDID 工具箱，功能覆盖 edidcraft.com 的解析、生成、校验与时序计算四大部分，但所有运算都改由浏览器端 JavaScript 实现：</p>
+        <p>这是一个 <b>纯静态、纯前端</b> 的 EDID 工具箱，功能覆盖 edidcraft.com 的解析、生成、校验与时序计算四大部分，所有运算都由浏览器端 JavaScript 实现：</p>
         <ul class="small muted">
-          <li>没有后端、没有 API 请求，断网可用；</li>
+          <li>没有后端、没有 API 请求，页面不发起任何远程调用；</li>
           <li>不加载任何 CDN 资源（图标为内联 SVG、字体为系统字体）；</li>
-          <li>直接双击 <code>index.html</code> 即可用 <code>file://</code> 打开；</li>
-          <li>因为全部是静态文件，可以直接放到 GitHub Pages / Gitee Pages / 任意静态托管。</li>
+          <li>只有 <code>index.html</code> + <code>css/</code> + <code>js/</code> 三部分，没有任何构建步骤；</li>
+          <li>因此可以直接放到 GitHub Pages / Cloudflare Pages / 任意静态托管。</li>
         </ul>
-        <p class="small muted">你的 EDID 数据始终留在本机内存里，刷新页面即消失（仅在本地保存主题与表单草稿）。</p>
+        <p class="small muted">你的 EDID 数据只存在于当前页面，刷新即消失（仅在浏览器本地保存主题与表单草稿）。</p>
       </div></div>
 
       <div class="card"><div class="body">
@@ -418,26 +418,21 @@
       <div class="card"><div class="body">
         <h3>部署到 GitHub Pages</h3>
         <ol class="small">
-          <li>新建仓库并把 <code>edidcraft-local</code> 内的文件推到根目录（或 <code>docs/</code>）。</li>
-          <li>仓库 <b>Settings → Pages</b>，Source 选分支 <code>main</code> 与目录 <code>/(root)</code> 或 <code>/docs</code>。</li>
+          <li>新建仓库并把 <code>edid-x-lab</code> 内的文件推到根目录（或 <code>docs/</code>）。</li>
+          <li>仓库 <b>Settings → Pages</b>，Source 选分支 <code>master</code> 与目录 <code>/(root)</code> 或 <code>/docs</code>。</li>
           <li>等待一分钟，访问 <code>https://用户名.github.io/仓库名/</code>。</li>
           <li>本工具用相对路径引用资源，放在子目录里也能正常工作。</li>
         </ol>
-        <h3 style="margin-top:14px">部署到 Gitee Pages</h3>
-        <ol class="small">
-          <li>推送代码到 Gitee 仓库，进入 <b>服务 → Gitee Pages</b>。</li>
-          <li>选择分支与部署目录，勾选强制 HTTPS，点击“启动”。</li>
-          <li>注意：Gitee Pages 免费版需要手动点击更新，且可能要求实名。</li>
-        </ol>
+        <h3 style="margin-top:14px">关于 Gitee Pages</h3>
+        <p class="small muted" style="margin:8px 0 0"><b>Gitee Pages 已停服，无法再用于部署。</b>Gitee 仓库仍可作为国内代码镜像，推送用 <code>git push gitee master</code>，详见项目 README。</p>
       </div></div>
 
       <div class="card"><div class="body">
-        <h3>本地使用与开发</h3>
+        <h3>使用与开发</h3>
         <div class="kv">
-          <dt>打开</dt><dd>直接双击 <code>index.html</code>（无需服务器）</dd>
           <dt>目录</dt><dd><code>index.html</code> · <code>css/styles.css</code> · <code>js/*.js</code></dd>
           <dt>引擎</dt><dd><code>edid-core.js</code>（常量与工具）· <code>timing.js</code>（CVT/GTF）· <code>edid-decoder.js</code> · <code>edid-encoder.js</code> · <code>edid-validator.js</code></dd>
-          <dt>校验</dt><dd>引擎自带 Node 测试脚本，可与在线服务结果逐项比对</dd>
+          <dt>自测</dt><dd>用 Node 或浏览器控制台加载引擎即可跑通预设与校验，详见 README</dd>
         </div>
         <p class="small muted" style="margin-top:10px">想做二次开发？引擎文件都是普通脚本，暴露 <code>window.EDIDCore / EDIDTiming / EDIDDecoder / EDIDEncoder / EDIDValidator</code>，可以单独取用。</p>
         <div class="btn-row" style="margin-top:10px">
@@ -452,9 +447,9 @@
 </main>
 
 <footer class="site"><div class="wrap">
-  <span>EDID Craft Local · 离线 EDID 工具箱</span>
+  <span>EDID-X-LAB · EDID 工具箱</span>
   <span class="dim">·</span>
-  <span class="dim">所有计算均在本地完成，无后端、无跟踪</span>
+  <span class="dim">纯静态页面，无后端、无跟踪</span>
   <span class="right dim">功能对标 edidcraft.com，代码与文案为独立实现</span>
 </div></footer>
 

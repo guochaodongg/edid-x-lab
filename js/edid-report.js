@@ -1,5 +1,5 @@
 /* ==========================================================================
-   EDID Craft Local — edid-report.js
+   EDID-X-LAB — edid-report.js
    Turns engine output (decode / validate / timing) into DOM fragments.
    Zero dependencies.  Plain text values are escaped; rows that carry HTML
    must pass the raw flag so nothing user-supplied is ever injected.

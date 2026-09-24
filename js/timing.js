@@ -1,5 +1,5 @@
 /* ==========================================================================
-   EDID Craft Local — timing.js
+   EDID-X-LAB — timing.js
    VESA CVT 1.1 / 1.2 (standard + reduced blanking v1/v2/v3) and GTF 1.1.
    Every formula here follows the VESA timing-generator equations.
    ========================================================================== */
