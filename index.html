@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EDID Craft Local — 离线 EDID 解析 / 生成 / 校验 / 时序计算</title>
+<meta name="description" content="完全离线的 EDID 工具箱：解析（Decoder）、生成（Encoder）、校验（Validator）与 VESA CVT/GTF 时序计算，单个网页即可运行，可直接部署到 GitHub Pages 或 Gitee Pages。">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Crect x='7' y='7' width='7' height='7' fill='%23fff'/%3E%3Crect x='18' y='7' width='7' height='7' fill='%23fff' opacity='.65'/%3E%3Crect x='7' y='18' width='7' height='7' fill='%23fff' opacity='.65'/%3E%3Crect x='18' y='18' width='7' height='7' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-decode" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h4"/>
+  </symbol>
+  <symbol id="i-encode" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 20h16"/><path d="M12 4v10"/><path d="m8 10 4 4 4-4"/>
+  </symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3l7 3v6c0 4.4-2.9 7.8-7 9-4.1-1.2-7-4.6-7-9V6z"/><path d="m9 12 2 2 4-4"/>
+  </symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>
+  </symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 5.5V20.5"/>
+  </symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6h.01"/>
+  </symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+    <circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"/>
+  </symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>
+  </symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 19h16"/><path d="M12 15V5"/><path d="m8 9 4-4 4 4"/>
+  </symbol>
+  <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 19h16"/><path d="M12 4v10"/><path d="m8 10 4 4 4-4"/>
+  </symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/>
+  </symbol>
+  <symbol id="i-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="7" rx="2"/><path d="M7 14h10v6H7z"/>
+  </symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4.5h-4.5"/>
+  </symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+    <path d="M6 6l12 12M18 6L6 18"/>
+  </symbol>
+  <symbol id="i-chip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="7" y="7" width="10" height="10" rx="1.5"/>
+    <path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/>
+  </symbol>
+</svg>
+
+<header class="site">
+  <div class="wrap">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--accent)"/><rect x="7" y="7" width="7" height="7" fill="#fff"/><rect x="18" y="7" width="7" height="7" fill="#fff" opacity=".6"/><rect x="7" y="18" width="7" height="7" fill="#fff" opacity=".6"/><rect x="18" y="18" width="7" height="7" fill="#fff"/></svg>
+      <b>EDID Craft <span>Local</span></b>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="decoder"><svg class="ic"><use href="#i-decode"/></svg>解析</button>
+      <button role="tab" aria-selected="false" data-tab="encoder"><svg class="ic"><use href="#i-encode"/></svg>生成</button>
+      <button role="tab" aria-selected="false" data-tab="validator"><svg class="ic"><use href="#i-shield"/></svg>校验</button>
+      <button role="tab" aria-selected="false" data-tab="timing"><svg class="ic"><use href="#i-clock"/></svg>时序计算</button>
+      <button role="tab" aria-selected="false" data-tab="learn"><svg class="ic"><use href="#i-book"/></svg>学习 EDID</button>
+      <button role="tab" aria-selected="false" data-tab="about"><svg class="ic"><use href="#i-info"/></svg>关于</button>
+    </nav>
+    <button class="icon ghost" id="theme-toggle" title="切换深色 / 浅色主题" aria-label="切换主题">
+      <svg class="ic" id="theme-icon"><use href="#i-moon"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+  <!-- ================================================== 解析 Decoder ===== -->
+  <section class="panel active" id="panel-decoder">
+    <div class="hero">
+      <div class="txt">
+        <h1>EDID 解析器</h1>
+        <p>把显示器的 EDID（128 字节基础块及其扩展块）粘贴或拖进来，即可得到厂商、产品、制造日期、输入接口、色度坐标、时序与全部描述符的完整解读。所有计算都在本机浏览器里完成，数据不会离开你的电脑。</p>
+      </div>
+      <div class="art">
+        <svg width="150" height="86" viewBox="0 0 150 86" aria-hidden="true">
+          <rect x="6" y="10" width="138" height="66" rx="8" fill="var(--surface)" stroke="var(--border-strong)"/>
+          <g fill="var(--accent)" opacity=".9">
+            <rect x="18" y="22" width="14" height="9" rx="2"/><rect x="38" y="22" width="14" height="9" rx="2" opacity=".7"/>
+            <rect x="58" y="22" width="14" height="9" rx="2" opacity=".45"/><rect x="78" y="22" width="14" height="9" rx="2" opacity=".7"/>
+            <rect x="98" y="22" width="14" height="9" rx="2" opacity=".45"/><rect x="118" y="22" width="14" height="9" rx="2"/>
+            <rect x="18" y="40" width="14" height="9" rx="2" opacity=".45"/><rect x="38" y="40" width="14" height="9" rx="2"/>
+            <rect x="58" y="40" width="14" height="9" rx="2" opacity=".7"/><rect x="78" y="40" width="14" height="9" rx="2" opacity=".45"/>
+            <rect x="98" y="40" width="14" height="9" rx="2"/><rect x="118" y="40" width="14" height="9" rx="2" opacity=".7"/>
+            <rect x="18" y="58" width="14" height="9" rx="2" opacity=".7"/><rect x="38" y="58" width="14" height="9" rx="2" opacity=".45"/>
+            <rect x="58" y="58" width="14" height="9" rx="2"/><rect x="78" y="58" width="14" height="9" rx="2"/>
+            <rect x="98" y="58" width="14" height="9" rx="2" opacity=".7"/><rect x="118" y="58" width="14" height="9" rx="2" opacity=".45"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="grid side">
+      <div class="card">
+        <header><h3>输入</h3><span class="spacer"></span><span class="chip" id="dec-size">0 字节</span></header>
+        <div class="body">
+          <div class="drop" id="dec-drop">
+            <div class="big">⇩</div>
+            <strong>拖放 EDID 文件到这里</strong>
+            <div class="small dim" style="margin-top:4px">支持 <code>.bin</code> <code>.hex</code> <code>.txt</code> <code>.dat</code>，或任意十六进制文本</div>
+            <div class="btn-row" style="justify-content:center;margin-top:12px">
+              <button class="sm" id="dec-open">选择文件…</button>
+              <button class="sm" id="dec-sample">载入示例</button>
+            </div>
+            <input type="file" id="dec-file" class="hide" accept=".bin,.hex,.txt,.dat,.edid,.log">
+          </div>
+          <div class="field" style="margin-top:14px">
+            <label for="dec-hex">或直接粘贴十六进制</label>
+            <textarea id="dec-hex" rows="8" spellcheck="false" placeholder="00 FF FF FF FF FF FF 00 10 AC …"></textarea>
+            <div class="hint">空格、换行、逗号、<code>0x</code> 前缀都会被自动忽略；也接受 128 字节的裸二进制。</div>
+          </div>
+          <div class="btn-row">
+            <button class="primary" id="dec-run"><svg class="ic"><use href="#i-decode"/></svg>解析</button>
+            <button id="dec-clear">清空</button>
+            <button id="dec-to-enc" title="把解析结果带进生成器">→ 送进生成器</button>
+          </div>
+        </div>
+      </div>
+      <div class="stack" id="dec-out">
+        <div class="card"><div class="body"><div class="empty">还没有数据。拖入文件或粘贴十六进制后点击“解析”。</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================== 生成 Encoder ===== -->
+  <section class="panel" id="panel-encoder">
+    <div class="card" style="margin-bottom:18px">
+      <header>
+        <h3>EDID 生成器</h3>
+        <span class="chip accent">按 VESA EDID 1.3 / 1.4 规范组包</span>
+        <span class="spacer"></span>
+        <div class="btn-row" id="enc-presets"></div>
+      </header>
+      <div class="body">
+        <div class="notice">
+          <svg class="ic" style="margin-top:2px"><use href="#i-info"/></svg>
+          <div>表单会实时生成基础块（以及你添加的扩展块）。校验和自动计算，生成的二进制可直接写入 <code>.bin</code> 供驱动或烧录工具使用。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid split">
+      <div class="stack" id="enc-form"></div>
+      <div class="stack">
+        <div class="card">
+          <header>
+            <h3>输出</h3>
+            <span class="spacer"></span>
+            <span class="chip" id="enc-blocks">1 块</span>
+            <span class="chip" id="enc-bytes">128 字节</span>
+          </header>
+          <div class="body">
+            <div class="btn-row" style="margin-bottom:12px">
+              <button class="primary sm" id="enc-validate"><svg class="ic"><use href="#i-shield"/></svg>校验</button>
+              <button class="sm" id="enc-copy"><svg class="ic"><use href="#i-copy"/></svg>复制十六进制</button>
+              <button class="sm" id="enc-dl-bin"><svg class="ic"><use href="#i-download"/></svg>.bin</button>
+              <button class="sm" id="enc-dl-hex"><svg class="ic"><use href="#i-download"/></svg>.hex</button>
+              <button class="sm" id="enc-print"><svg class="ic"><use href="#i-print"/></svg>打印 / PDF</button>
+            </div>
+            <div class="hex-head">
+              <span>实时预览</span><span class="spacer right" id="enc-warn-count"></span>
+            </div>
+            <div id="enc-hexwrap"></div>
+            <div id="enc-warnings" class="stack" style="margin-top:12px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <header><h3>生成结果预览</h3><span class="spacer"></span><span class="chip" id="enc-preview-verdict"></span></header>
+          <div class="body" id="enc-preview"><div class="empty">表单变化后这里会显示解析摘要。</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================ 校验 Validator ===== -->
+  <section class="panel" id="panel-validator">
+    <div class="grid side">
+      <div class="card">
+        <header><h3>待校验数据</h3><span class="spacer"></span><span class="chip" id="val-size">0 字节</span></header>
+        <div class="body">
+          <div class="drop" id="val-drop">
+            <div class="big">⇩</div>
+            <strong>拖放 EDID 文件到这里</strong>
+            <div class="btn-row" style="justify-content:center;margin-top:12px">
+              <button class="sm" id="val-open">选择文件…</button>
+              <button class="sm" id="val-sample">载入示例</button>
+              <button class="sm" id="val-from-dec">用解析器的数据</button>
+            </div>
+            <input type="file" id="val-file" class="hide" accept=".bin,.hex,.txt,.dat,.edid,.log">
+          </div>
+          <div class="field" style="margin-top:14px">
+            <label for="val-hex">或粘贴十六进制</label>
+            <textarea id="val-hex" rows="8" spellcheck="false" placeholder="00 FF FF FF FF FF FF 00 …"></textarea>
+          </div>
+          <div class="btn-row">
+            <button class="primary" id="val-run"><svg class="ic"><use href="#i-shield"/></svg>开始校验</button>
+            <button id="val-clear">清空</button>
+          </div>
+        </div>
+      </div>
+      <div class="stack" id="val-out">
+        <div class="card"><div class="body"><div class="empty">校验会检查结构、校验和、日期、色度、时序、描述符与扩展块，并按错误 / 警告 / 提示分级列出。</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================= 时序计算 Timing ====== -->
+  <section class="panel" id="panel-timing">
+    <div class="grid side">
+      <div class="card">
+        <header><h3>时序参数</h3><span class="spacer"></span><span class="chip" id="tm-mode-chip">CVT</span></header>
+        <div class="body">
+          <div class="field">
+            <label for="tm-standard">标准</label>
+            <select id="tm-standard">
+              <option value="cvt">VESA CVT（通用时序公式）</option>
+              <option value="gtf">VESA GTF（广义时序公式）</option>
+            </select>
+          </div>
+          <div class="field" id="tm-rb-field">
+            <label for="tm-rb">CVT 消隐方式</label>
+            <select id="tm-rb">
+              <option value="0">标准消隐（CVT 1.1）</option>
+              <option value="1">缩减消隐 v1（CVT-RB）</option>
+              <option value="2">缩减消隐 v2（CVT-RBv2）</option>
+              <option value="3">缩减消隐 v3（CVT-RBv3）</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="tm-w">宽度（像素）</label><input type="number" id="tm-w" value="1920" min="64" max="16384" step="1"></div>
+            <div class="field"><label for="tm-h">高度（像素）</label><input type="number" id="tm-h" value="1080" min="64" max="16384" step="1"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="tm-r">刷新率（Hz）</label><input type="number" id="tm-r" value="60" min="1" max="480" step="0.01"></div>
+            <div class="field"><label for="tm-ar">宽高比</label><select id="tm-ar">
+              <option value="auto">自动</option><option value="4:3">4:3</option><option value="16:9">16:9</option>
+              <option value="16:10">16:10</option><option value="5:4">5:4</option><option value="1:1">1:1</option>
+              <option value="21:9">21:9（用 16:9 参数）</option>
+            </select></div>
+          </div>
+          <div id="tm-extra"></div>
+          <div class="btn-row">
+            <button class="primary" id="tm-run"><svg class="ic"><use href="#i-clock"/></svg>计算</button>
+            <button id="tm-presets">常用分辨率</button>
+            <button id="tm-swap">↕ 交换宽高</button>
+          </div>
+        </div>
+      </div>
+      <div class="stack" id="tm-out"></div>
+    </div>
+  </section>
+
+  <!-- ================================================ 学习 Learn ========= -->
+  <section class="panel" id="panel-learn">
+    <div class="card" style="margin-bottom:18px"><div class="body">
+      <h1 style="margin-bottom:6px">EDID 速成课</h1>
+      <p class="muted" style="margin:0">从 128 字节的二进制结构，到上面这些工具到底在算什么。</p>
+    </div></div>
+
+    <div class="grid cols-2">
+      <div class="card"><div class="body">
+        <h3>1 · EDID 是什么</h3>
+        <p><b>EDID</b>（Extended Display Identification Data，扩展显示标识数据）是显示器向主机介绍自己的一张“电子名片”。显卡通过 DDC/I²C 通道在显示器上电时读取它，据此决定默认分辨率、色深、色彩空间、是否支持音频等。</p>
+        <p>数据以 <b>128 字节</b>为一个基本单位，称为一个 <b>block（块）</b>。第 1 块（基础块，Base Block）承载厂商、产品、色度和基础时序；后续扩展块描述更多能力。</p>
+        <ul class="small muted">
+          <li>规范由 VESA 维护，常见版本 <b>EDID 1.3</b>（2006 年前后为主）与 <b>EDID 1.4</b>（现行）。</li>
+          <li>每块第 127 字节（偏移 0x7F）是 <b>校验和</b>：使整块 128 字节累加后低 8 位为 0。</li>
+          <li>基础块偏移 0x7E 记录 <b>扩展块数量</b>，因此整份 EDID 长度必为 128 × (1 + N)。</li>
+        </ul>
+      </div></div>
+
+      <div class="card"><div class="body">
+        <h3>2 · 基础块字节地图</h3>
+        <div class="table-scroll"><table>
+          <thead><tr><th>偏移</th><th>内容</th><th>长度</th></tr></thead>
+          <tbody>
+            <tr><td class="num">00</td><td>固定头 <code>00 FF FF FF FF FF FF 00</code></td><td>8</td></tr>
+            <tr><td class="num">08</td><td>厂商 ID（3 字母 PNP，压缩编码）</td><td>2</td></tr>
+            <tr><td class="num">0A</td><td>产品代码（小端）</td><td>2</td></tr>
+            <tr><td class="num">0C</td><td>序列号（小端，十进制或十六进制）</td><td>4</td></tr>
+            <tr><td class="num">10</td><td>制造周 / 年份（年 = 值 + 1990）</td><td>2</td></tr>
+            <tr><td class="num">12</td><td>EDID 版本 / 修订号</td><td>2</td></tr>
+            <tr><td class="num">14</td><td>视频输入定义（数字 / 模拟）</td><td>1</td></tr>
+            <tr><td class="num">15</td><td>屏幕尺寸（厘米，横向 / 纵向）</td><td>2</td></tr>
+            <tr><td class="num">17</td><td>Gamma（值/100 + 1）</td><td>1</td></tr>
+            <tr><td class="num">18</td><td>特性支持（电源、色彩、sRGB…）</td><td>1</td></tr>
+            <tr><td class="num">19</td><td>色度坐标（CIE 1931，10 位精度）</td><td>10</td></tr>
+            <tr><td class="num">23</td><td>既定时序（Established Timings）</td><td>3</td></tr>
+            <tr><td class="num">26</td><td>标准时序（Standard Timings，8 组）</td><td>16</td></tr>
+            <tr><td class="num">36</td><td>四个 18 字节描述符</td><td>72</td></tr>
+            <tr><td class="num">7E</td><td>扩展块数量</td><td>1</td></tr>
+            <tr><td class="num">7F</td><td>校验和</td><td>1</td></tr>
+          </tbody>
+        </table></div>
+      </div></div>
+
+      <div class="card"><div class="body">
+        <h3>3 · 四种描述符</h3>
+        <p>偏移 <code>0x36</code> 起有 4 个 18 字节槽位，每个槽位要么是 <b>详细时序描述符（DTD）</b>，要么是“显示器描述符”。区分方式：前两字节为 <code>00 00</code> 且第 2、4 字节也为 0 时，是显示器描述符，标签在第 3 字节。</p>
+        <p class="small muted">常见标签：<code>0xFC</code> 显示器名称 · <code>0xFF</code> 序列号 · <code>0xFE</code> 自由文本 · <code>0xFD</code> 行频场频范围 · <code>0xFB</code> 附加白点 · <code>0xFA</code> 附加标准时序 · <code>0x10</code> 空描述符。</p>
+        <p>文本类描述符的 13 个字符必须以 <code>0x0A</code> 结尾、其余用 <code>0x20</code> 补齐；因此名称最多 12 个字符。</p>
+        <p><b>第 1 个槽位若为 DTD，就是“首选时序”</b>——显示器原生分辨率，主机默认优先使用。</p>
+      </div></div>
+
+      <div class="card"><div class="body">
+        <h3>4 · 详细时序描述符（18 字节）</h3>
+        <div class="table-scroll"><table>
+          <thead><tr><th>字节</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td>0–1</td><td>像素时钟（10 kHz 为单位，小端）</td></tr>
+            <tr><td>2–4</td><td>行有效像素、行消隐、二者高 4 位</td></tr>
+            <tr><td>5–7</td><td>场有效行数、场消隐、二者高 4 位</td></tr>
+            <tr><td>8–9</td><td>行同步偏移（前肩）、行同步宽度</td></tr>
+            <tr><td>10–11</td><td>场同步偏移 / 宽度，以及各字段高位</td></tr>
+            <tr><td>12–14</td><td>图像横向 / 纵向尺寸（mm）及其高位</td></tr>
+            <tr><td>15–16</td><td>上下左右边框像素</td></tr>
+            <tr><td>17</td><td>隔行、立体、同步类型与极性</td></tr>
+          </tbody>
+        </table></div>
+        <p class="small muted">刷新率 = 像素时钟 ÷ (行总数 × 场总数)；行总数 = 有效 + 消隐。</p>
+      </div></div>
+
+      <div class="card"><div class="body">
+        <h3>5 · 扩展块：CEA-861 与 DisplayID</h3>
+        <p><b>CEA-861</b>（标签 <code>0x02</code>）是电视 / HDMI 显示器的重头戏：用“数据块集合”描述支持的分辨率、音频、扬声器布局与厂商能力。</p>
+        <ul class="small muted">
+          <li>视频数据块：一字节一个 <b>VIC</b>（如 16 = 1080p60、97 = 4K60），最高位置 1 表示原生格式。</li>
+          <li>音频数据块：每 3 字节描述一种格式（LPCM / AC-3…）、声道数与采样率。</li>
+          <li>厂商数据块：以 OUI 开头，<code>00 0C 03</code> 即 HDMI 1.4 的 VSDB，内含物理地址与 TMDS 上限。</li>
+          <li>扩展数据块：第 1 字节是扩展标签，<code>0x06</code> 为 HDR 静态元数据，<code>0x05</code> 为色度（Colorimetry）。</li>
+        </ul>
+        <p><b>DisplayID</b>（标签 <code>0x70</code>）取代 CEA 用于 DisplayPort，用“分节”结构承载显示参数、色度与更高效的时序编码。</p>
+        <p class="small muted">其他扩展：<code>0x10</code> VTB 时序块、<code>0xAF</code> / <code>0xF0</code> 块映射表。</p>
+      </div></div>
+
+      <div class="card"><div class="body">
+        <h3>6 · CVT 与 GTF：时序是怎么算出来的</h3>
+        <p>已知分辨率与刷新率时，需要推导出消隐、同步宽度等全部参数。VESA 定义了两套公式：</p>
+        <ul class="small muted">
+          <li><b>GTF</b>（广义时序公式）：较早，用 40 行频段做折中，普遍用于 CRT 时代与旧显示器。</li>
+          <li><b>CVT</b>（通用时序公式）：为液晶优化，提供 <b>标准消隐</b> 与 <b>缩减消隐（RB / RBv2 / RBv3）</b>；RB 系列把消隐压到很小，显著降低像素时钟，是 144 Hz、4K 以上高刷的必需品。</li>
+        </ul>
+        <p>CVT 的场同步宽度由<b>宽高比</b>决定（4:3 → 4 行，16:9 → 5 行，16:10 → 6 行，5:4 / 15:9 → 7 行，其余 10 行）；像素时钟在 CVT 1.1 下按 0.25 MHz 截断，CVT 1.2（RBv2/v3）则精确到 0.001 MHz。</p>
+        <p class="small muted">时序计算器同时输出 X11 <code>Modeline</code> 与 <code>xrandr --newmode</code>，可直接粘贴到 Linux 自定义分辨率。</p>
+      </div></div>
+
+      <div class="card"><div class="body">
+        <h3>7 · 常见的“坑”</h3>
+        <ul class="small muted">
+          <li><b>校验和错一位</b>：整块失效，很多驱动会直接忽略整份 EDID。</li>
+          <li><b>扩展块数量与实际不符</b>：主机按声明数量读取，会读到垃圾数据。</li>
+          <li><b>首选时序不在第 1 槽位</b>：等于没有原生分辨率，系统可能落到 1024×768。</li>
+          <li><b>声明了 sRGB 但色度字节不是 sRGB 值</b>：色彩管理会明显偏色。</li>
+          <li><b>HDMI / DP 却没有 CEA-861 扩展块</b>：分辨率和音频能力不会被完整识别。</li>
+          <li><b>文本描述符没有 0x0A 结尾</b>：名称会带上垃圾字符，或在第 13 字节被截断。</li>
+        </ul>
+        <p>用“校验”标签页逐项排查，错误会精确定位到字节与槽位。</p>
+        <p class="small"><a href="#" data-goto="decoder">→ 去解析一份 EDID</a> · <a href="#" data-goto="validator">→ 去校验</a></p>
+      </div></div>
+
+      <div class="card"><div class="body">
+        <h3>8 · 参考与延伸</h3>
+        <ul class="small muted">
+          <li>VESA <i>E-EDID Implementation Guide</i>（EDID 1.4）</li>
+          <li>VESA <i>CVT 1.2</i> / <i>GTF 1.1</i> 时序公式</li>
+          <li>CTA-861 系列（VIC 表、VSDB、HDR 元数据）</li>
+          <li>VESA <i>DisplayID 2.0</i></li>
+          <li>Linux 内核 <code>edid-decode</code> 与本工具的校验结果可互相印证</li>
+        </ul>
+        <p class="small muted">本页内容为工具使用所需的背景知识整理，具体实现请以 VESA 官方规范为准。</p>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ================================================= 关于 About ======== -->
+  <section class="panel" id="panel-about">
+    <div class="grid cols-2">
+      <div class="card"><div class="body">
+        <h3>关于本工具</h3>
+        <p>这是一个 <b>完全离线</b> 的 EDID 工具箱，功能覆盖 edidcraft.com 的解析、生成、校验与时序计算四大部分，但所有运算都改由浏览器端 JavaScript 实现：</p>
+        <ul class="small muted">
+          <li>没有后端、没有 API 请求，断网可用；</li>
+          <li>不加载任何 CDN 资源（图标为内联 SVG、字体为系统字体）；</li>
+          <li>直接双击 <code>index.html</code> 即可用 <code>file://</code> 打开；</li>
+          <li>因为全部是静态文件，可以直接放到 GitHub Pages / Gitee Pages / 任意静态托管。</li>
+        </ul>
+        <p class="small muted">你的 EDID 数据始终留在本机内存里，刷新页面即消失（仅在本地保存主题与表单草稿）。</p>
+      </div></div>
+
+      <div class="card"><div class="body">
+        <h3>功能清单</h3>
+        <div class="kv">
+          <dt>解析</dt><dd>基础块全字段、既定 / 标准时序、四类描述符、CEA-861 数据块、DisplayID 分节、VTB、块映射</dd>
+          <dt>生成</dt><dd>厂商 / 产品 / 序列号、日期与版本、数字 / 模拟输入、色度、既定与标准时序、描述符与扩展块，自动校验和</dd>
+          <dt>校验</dt><dd>结构与校验和、日期范围、色度合法性与 sRGB 一致性、时序自洽、描述符格式、扩展块一致性，分级报告</dd>
+          <dt>时序</dt><dd>CVT 标准 / RB / RBv2 / RBv3 与 GTF（含隔行与缩边），输出参数表、Modeline、xrandr 命令与可写入 DTD 的字节</dd>
+        </div>
+      </div></div>
+
+      <div class="card"><div class="body">
+        <h3>部署到 GitHub Pages</h3>
+        <ol class="small">
+          <li>新建仓库并把 <code>edidcraft-local</code> 内的文件推到根目录（或 <code>docs/</code>）。</li>
+          <li>仓库 <b>Settings → Pages</b>，Source 选分支 <code>main</code> 与目录 <code>/(root)</code> 或 <code>/docs</code>。</li>
+          <li>等待一分钟，访问 <code>https://用户名.github.io/仓库名/</code>。</li>
+          <li>本工具用相对路径引用资源，放在子目录里也能正常工作。</li>
+        </ol>
+        <h3 style="margin-top:14px">部署到 Gitee Pages</h3>
+        <ol class="small">
+          <li>推送代码到 Gitee 仓库，进入 <b>服务 → Gitee Pages</b>。</li>
+          <li>选择分支与部署目录，勾选强制 HTTPS，点击“启动”。</li>
+          <li>注意：Gitee Pages 免费版需要手动点击更新，且可能要求实名。</li>
+        </ol>
+      </div></div>
+
+      <div class="card"><div class="body">
+        <h3>本地使用与开发</h3>
+        <div class="kv">
+          <dt>打开</dt><dd>直接双击 <code>index.html</code>（无需服务器）</dd>
+          <dt>目录</dt><dd><code>index.html</code> · <code>css/styles.css</code> · <code>js/*.js</code></dd>
+          <dt>引擎</dt><dd><code>edid-core.js</code>（常量与工具）· <code>timing.js</code>（CVT/GTF）· <code>edid-decoder.js</code> · <code>edid-encoder.js</code> · <code>edid-validator.js</code></dd>
+          <dt>校验</dt><dd>引擎自带 Node 测试脚本，可与在线服务结果逐项比对</dd>
+        </div>
+        <p class="small muted" style="margin-top:10px">想做二次开发？引擎文件都是普通脚本，暴露 <code>window.EDIDCore / EDIDTiming / EDIDDecoder / EDIDEncoder / EDIDValidator</code>，可以单独取用。</p>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="sm" id="about-reset">清除本地草稿</button>
+          <button class="sm" id="about-print">打印本页</button>
+        </div>
+      </div></div>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<footer class="site"><div class="wrap">
+  <span>EDID Craft Local · 离线 EDID 工具箱</span>
+  <span class="dim">·</span>
+  <span class="dim">所有计算均在本地完成，无后端、无跟踪</span>
+  <span class="right dim">功能对标 edidcraft.com，代码与文案为独立实现</span>
+</div></footer>
+
+<div id="toasts" aria-live="polite"></div>
+
+<div class="modal-back" id="modal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <header><h3 id="modal-title">标题</h3><span class="spacer right"></span><button class="icon ghost" id="modal-close" aria-label="关闭"><svg class="ic"><use href="#i-x"/></svg></button></header>
+    <div class="body" id="modal-body"></div>
+    <div class="foot" id="modal-foot"></div>
+  </div>
+</div>
+
+<script src="js/edid-core.js"></script>
+<script src="js/timing.js"></script>
+<script src="js/edid-decoder.js"></script>
+<script src="js/edid-encoder.js"></script>
+<script src="js/edid-validator.js"></script>
+<script src="js/edid-report.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

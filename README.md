@@ -1,0 +1,214 @@
+# EDID Craft Local · 离线 EDID 工具箱
+
+对 [edidcraft.com](https://edidcraft.com/) 全部功能的**离线复刻**：解析（Decoder）、生成（Encoder）、校验（Validator）、时序计算（Timing Calculator），外加一页 EDID 速成课。
+
+- **零依赖**：没有后端、没有 API 请求、不加载任何 CDN。图标是内联 SVG，字体用系统字体栈。
+- **双击即用**：直接打开 `index.html` 就能跑（`file://` 协议下也正常）。
+- **随处部署**：纯静态文件，可直接放到 GitHub Pages / Gitee Pages / Cloudflare Pages / 任意静态服务器。
+- **数据不外流**：所有计算都在你的浏览器里完成，EDID 内容不会离开本机。
+
+---
+
+## 1. 本地打开
+
+```
+双击 edidcraft-local/index.html
+```
+
+不需要 Node、不需要 Python、不需要起服务器。Windows / macOS / Linux 上的 Chrome、Edge、Firefox、Safari 都可以。
+
+> 想用本地服务器打开也行（可选）：
+> ```bash
+> cd edidcraft-local
+> python -m http.server 8080     # 然后访问 http://localhost:8080
+> ```
+
+---
+
+## 2. 功能清单
+
+| 标签页 | 能力 |
+| --- | --- |
+| **解析** | 基础块全字段（厂商 PNP、产品、序列号、制造日期、数字/模拟输入、屏幕尺寸、Gamma、DPMS、sRGB、色度坐标 + CIE 1931 色度图）、既定时序、标准时序、4 个描述符（DTD / 0xFC 名称 / 0xFF 序列号 / 0xFE 文本 / 0xFD 范围限制 / 0x10 空）、CEA-861 全部数据块、DisplayID 分节、VTB、块映射表；带字段提示的分块十六进制查看器 |
+| **生成** | 可视化表单组包：厂商/产品/序列号、日期与版本、数字（位深/接口/颜色编码）或模拟（电平/同步方式）输入、DPMS 与特性位、色度坐标（一键 sRGB / D65）、17 项既定时序、最多 8 组标准时序、4 个可切换类型的描述符槽位、可增删的 CEA / DisplayID / VTB / 块映射扩展块；校验和自动计算，实时十六进制预览 + 自校验结果 |
+| **校验** | 结构、固定头、块长度、逐块校验和、扩展块数量一致性、日期范围、色度合法性与 sRGB 一致性、时序自洽、描述符格式（文本终止符、范围限制填充、CVT 参数）、CEA/VSDB/HDR/色度块一致性；按**错误 / 警告 / 提示**三级报告 |
+| **时序计算** | VESA **CVT 1.1**（标准消隐）与 **CVT 1.2**（RB / RBv2 / RBv3）、**GTF 1.1**（含隔行与缩边）；输出完整参数表、消隐结构图、X11 `Modeline`、`xrandr --newmode` / `--addmode`，以及可直接写进 DTD 的 18 字节 |
+| **学习 EDID** | 8 节速成课：EDID 是什么、基础块字节地图、四种描述符、18 字节 DTD 逐字节解释、CEA-861 与 DisplayID、CVT/GTF 原理、常见坑、参考资料 |
+| **关于** | 部署说明、本地开发说明、清除本地草稿 |
+
+附加能力：拖放 `.bin` / `.hex` / `.txt` / `.dat` / `.edid` 文件、粘贴任意十六进制文本（空格/换行/逗号/`0x` 前缀自动忽略）、`.bin/.hex` 导出、复制到剪贴板、打印 / 存 PDF、深色/浅色主题、自动保存草稿到 `localStorage`、**解析结果一键送进生成器**。
+
+---
+
+## 3. 目录结构
+
+```
+edidcraft-local/
+├── index.html              # 页面骨架 + 内联 SVG 图标 + 各标签页内容
+├── css/
+│   └── styles.css          # 设计系统（浅色/深色变量、组件、打印样式）
+├── js/
+│   ├── edid-core.js        # 常量表 + 工具（校验和、色度、厂商码、VIC 表…）
+│   ├── timing.js           # CVT / GTF 计算、Modeline、xrandr
+│   ├── edid-decoder.js     # 字节流 → 结构化对象
+│   ├── edid-encoder.js     # 模型 → 字节流（含 7 套预设）
+│   ├── edid-validator.js   # 结构 / 语义校验，分级报告
+│   ├── edid-report.js      # 结构化对象 → HTML 片段（纯字符串，无 DOM 依赖）
+│   └── app.js              # 界面接线：标签页、表单、草稿、导出
+└── README.md
+```
+
+脚本按 `core → timing → decoder → encoder → validator → report → app` 的顺序加载，**顺序不能改**（都是普通 `<script>`，不是 ES module，这样才能在 `file://` 下工作）。
+
+---
+
+## 4. 部署到 GitHub Pages
+
+### 4.1 新建仓库并推送
+
+把 `edidcraft-local` **里面的文件**推到仓库根目录，这样访问地址最短：
+
+```bash
+cd edidcraft-local
+git init
+git add .
+git commit -m "EDID Craft Local: offline EDID toolkit"
+git branch -M main
+git remote add origin https://github.com/<你的用户名>/<仓库名>.git
+git push -u origin main
+```
+
+> 也可以把整个 `edidcraft-local` 文件夹推上去，此时地址会变成
+> `https://<用户名>.github.io/<仓库名>/edidcraft-local/`，同样能用。
+
+### 4.2 打开 Pages
+
+1. 仓库页面 → **Settings** → 左侧 **Pages**
+2. **Source** 选 `Deploy from a branch`
+3. **Branch** 选 `main`，目录选 `/(root)`（若用 `docs/` 就选 `/docs`）
+4. **Save**，等 1 分钟左右
+
+访问：`https://<你的用户名>.github.io/<仓库名>/`
+
+### 4.3 几点提醒
+
+- 本项目全部用**相对路径**引用资源，所以放在子目录（如 `/edidcraft/`）里也能正常工作。
+- 仓库里加一个空的 `.nojekyll` 文件可以跳过 Jekyll 处理（本项目的资源目录不以 `_` 开头，其实不加也没问题）。
+- 想绑定自定义域名：同一页面的 **Custom domain** 填域名，然后在域名解析里加一条 `CNAME` 记录指向 `<用户名>.github.io`。
+- 更新内容只需 `git push`，Pages 会自动重新构建。
+
+---
+
+## 5. 部署到 Gitee Pages
+
+```bash
+cd edidcraft-local
+git init
+git add .
+git commit -m "EDID Craft Local: offline EDID toolkit"
+git remote add origin https://gitee.com/<你的用户名>/<仓库名>.git
+git push -u origin master        # Gitee 默认分支通常是 master
+```
+
+然后：
+
+1. 仓库页面 → 顶部 **服务** → **Gitee Pages**
+2. **部署分支** 选 `master`，**部署目录** 留空（根目录）
+3. 勾选 **强制使用 HTTPS** → 点击 **启动**
+4. 访问 `https://<你的用户名>.gitee.com/<仓库名>/`
+
+> **注意**：Gitee Pages 免费版每次推送后都需要回到这个页面**手动点一次“更新”**才会重新部署；而且该服务通常要求账号完成实名认证。
+
+---
+
+## 6. 部署到其他静态托管
+
+因为是纯静态文件，以下平台都可以直接用（构建命令留空、输出目录填 `edidcraft-local` 或 `.`）：
+
+- **Cloudflare Pages** / **Netlify** / **Vercel** — 拖拽文件夹即可
+- **对象存储** — 阿里云 OSS、腾讯云 COS、七牛等，开启静态网站托管后上传整个目录
+- **自建 nginx** — 把目录扔进站点根目录即可，无需任何 rewrite 规则
+
+---
+
+## 7. 复用引擎（二次开发）
+
+引擎文件都是普通脚本，会挂到 `window` 上，可以脱离界面单独使用：
+
+```html
+<script src="js/edid-core.js"></script>
+<script src="js/timing.js"></script>
+<script src="js/edid-decoder.js"></script>
+<script src="js/edid-encoder.js"></script>
+<script src="js/edid-validator.js"></script>
+<script>
+  // 二进制 → 结构化对象
+  var report = EDIDDecoder.decode(bytes);        // { ok, base, extensions, ... }
+
+  // 模型 → 二进制（校验和自动生成）
+  var model = EDIDEncoder.defaultModel();        // 也可以先套用预设
+  EDIDEncoder.FORMAT_PRESETS['4k'].apply(model);
+  var out = EDIDEncoder.encode(model);           // { bytes, hex, warnings }
+
+  // 校验
+  var check = EDIDValidator.validate(bytes);
+  // { isValid, status, errors[], warnings[], info[], summary, messages, decoded }
+
+  // 时序
+  var t = EDIDTiming.computeCVT({ width: 2560, height: 1440, refreshRate: 144, rbVersion: 2 });
+  EDIDTiming.modeline(t);
+  EDIDTiming.xrandrNewmode(t);
+</script>
+```
+
+主要导出：
+
+| 全局对象 | 内容 |
+| --- | --- |
+| `EDIDCore` | 常量表（`ESTABLISHED`、`CEA_VIDEO_CODES`、`SPEAKER_ALLOCATION`…）与工具（`bytesToHex`、`checksum`、`manufacturerFromBytes`、`chromaToXy`、`sRGBChromaticity`、`establishedKey`…） |
+| `EDIDTiming` | `computeCVT`、`computeGTF`、`modeline`、`xrandrNewmode`、`xrandrAddMode`、`xrandrAddOutput`、`timingRows`、`PRESETS` |
+| `EDIDDecoder` | `decode(bytes)` |
+| `EDIDEncoder` | `encode(model)`、`defaultModel()`、`defaultDTD()`、`dtdFromTiming()`、`packDTD()`、`ceaHdExtension()`、`cea4kExtension()`、`FORMAT_PRESETS`（`1080p` / `1440p` / `4k` / `ultrawide` / `laptop` / `legacy` / `hdr`） |
+| `EDIDValidator` | `validate(bytes)` |
+| `EDIDReport` | `decodeReport`、`validationReport`、`timingReport`、`hexViewer`、`chromaPlot`、`kv`、`card`、`chip`、`tableHtml`、`esc` |
+
+---
+
+## 8. 自测
+
+引擎与渲染层自带 Node 测试脚本（在上一级目录的 `_ref/` 里），不需要任何第三方包：
+
+```bash
+cd _ref
+node test-edid.js       # 引擎：编解码往返、7 套预设、校验规则
+node test-timing.js     # 时序：CVT/GTF 各分辨率与刷新率矩阵
+node test-render.js     # 渲染：所有预设的解析/校验/时序报告，检查 undefined/NaN、标签闭合
+```
+
+界面层另有一个端到端测试，用 jsdom 真实加载 `index.html` 并模拟点击、输入、拖放。jsdom 不是项目依赖，装在工作目录之外即可：
+
+```bash
+# 在一个临时目录里装一次 jsdom
+mkdir /tmp/edid-domtest && cd /tmp/edid-domtest && npm install jsdom
+
+cd <项目>/_ref
+NODE_PATH=/tmp/edid-domtest/node_modules node test-app-dom.js
+```
+
+Windows 上把 `NODE_PATH` 换成 `C:\...\edid-domtest\node_modules` 即可。
+
+---
+
+## 9. 已知边界
+
+- **DisplayID** 只解析到“分节”层级（标签/版本/长度/偏移），不做逐节内容解释；生成器也按分节字节原样写入。
+- **VTB** 与**块映射表**同样只做结构与标签层面的处理。
+- **HDMI Forum VSDB**（OUI `C4-5D-D8`）只读版本号，不展开其全部能力位。
+- 音频数据块最多 10 个描述符；标准时序最多 8 组；描述符固定 4 个槽位——这些都是 EDID 规范本身的限制。
+- 校验规则以 VESA 规范与 Linux `edid-decode` 的判定为参照，但个别厂商的“非标但可用”做法可能被报为警告，请结合实际情况判断。
+
+---
+
+## 10. 说明
+
+本项目的代码与文案为独立实现，功能对标 edidcraft.com。EDID / CEA-861 / DisplayID / CVT / GTF 的具体细节请以 VESA 与 CTA 官方规范为准。
