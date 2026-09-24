@@ -7,6 +7,9 @@
 - **随处部署**：纯静态文件，可直接放到 GitHub Pages / Gitee Pages / Cloudflare Pages / 任意静态服务器。
 - **数据不外流**：所有计算都在你的浏览器里完成，EDID 内容不会离开本机。
 
+**在线地址**：<https://guochaodong_admin.gitee.io/edid-x-lab/>
+**仓库地址**：<https://gitee.com/guochaodong_admin/edid-x-lab>
+
 ---
 
 ## 1. 本地打开
@@ -101,23 +104,47 @@ git push -u origin main
 
 ## 5. 部署到 Gitee Pages
 
+本项目已部署在：**<https://guochaodong_admin.gitee.io/edid-x-lab/>**
+
+### 5.1 前置条件
+
+- 仓库必须是**公开**仓库（个人私有仓库开不了免费 Pages，且 Pro 的个人购买入口已关闭）。
+- Gitee 账号需完成**实名认证**（设置 → 安全设置 → 实名认证）。
+- 免费版**不支持自定义域名**，只能用它给的 `*.gitee.io` 二级域名。
+
+### 5.2 首次部署
+
+在 Gitee 网页上新建**公开**仓库 `edid-x-lab`（**不要**勾选"使用 Readme 文件初始化"），然后在本地：
+
 ```bash
 cd edidcraft-local
-git init
+git init -b master
 git add .
 git commit -m "EDID Craft Local: offline EDID toolkit"
-git remote add origin https://gitee.com/<你的用户名>/<仓库名>.git
-git push -u origin master        # Gitee 默认分支通常是 master
+git remote add origin https://gitee.com/guochaodong_admin/edid-x-lab.git
+git push -u origin master
 ```
 
-然后：
+第一次推送会让你输入 Gitee 的邮箱与密码；凭据已由 `credential.helper=store` 记住，之后不用再输。
 
-1. 仓库页面 → 顶部 **服务** → **Gitee Pages**
+### 5.3 启动 Pages 服务
+
+1. 打开仓库页面 → 顶部 **服务** 菜单 → **Gitee Pages**
 2. **部署分支** 选 `master`，**部署目录** 留空（根目录）
 3. 勾选 **强制使用 HTTPS** → 点击 **启动**
-4. 访问 `https://<你的用户名>.gitee.com/<仓库名>/`
+4. 等 1–5 分钟，访问 `https://guochaodong_admin.gitee.io/edid-x-lab/`
 
-> **注意**：Gitee Pages 免费版每次推送后都需要回到这个页面**手动点一次“更新”**才会重新部署；而且该服务通常要求账号完成实名认证。
+### 5.4 后续更新
+
+```bash
+git add -A
+git commit -m "描述这次改了什么"
+git push
+```
+
+推完之后**必须回到 Gitee Pages 页面手动点一次"更新"**，免费版不会自动重新部署（每天最多更新 10 次）。
+
+> Gitee Pages 免费版服务稳定性一般，对国内访问速度敏感、又想长期稳定的话，可以把同一个仓库镜像到 GitHub Pages 或 Cloudflare Pages 作为备份入口（见上一节）。
 
 ---
 
