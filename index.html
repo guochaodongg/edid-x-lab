@@ -71,6 +71,7 @@
       <button role="tab" aria-selected="false" data-tab="encoder"><svg class="ic"><use href="#i-encode"/></svg>生成</button>
       <button role="tab" aria-selected="false" data-tab="validator"><svg class="ic"><use href="#i-shield"/></svg>校验</button>
       <button role="tab" aria-selected="false" data-tab="timing"><svg class="ic"><use href="#i-clock"/></svg>时序计算</button>
+      <button role="tab" aria-selected="false" data-tab="vtc"><svg class="ic"><use href="#i-clock"/></svg>时序对比</button>
       <button role="tab" aria-selected="false" data-tab="learn"><svg class="ic"><use href="#i-book"/></svg>学习 EDID</button>
       <button role="tab" aria-selected="false" data-tab="about"><svg class="ic"><use href="#i-info"/></svg>关于</button>
     </nav>
@@ -268,6 +269,63 @@
     </div>
   </section>
 
+  <!-- ============================================ 时序对比 VTC ========= -->
+  <section class="panel" id="panel-vtc">
+    <p class="muted" style="margin-top:0">
+      多标准视频时序对比计算器（功能复刻自 Tom Verbeure 的
+      <a href="https://tomverbeure.github.io/video_timings_calculator.html" target="_blank" rel="noopener">Video Timings Calculator</a>）。
+      输入分辨率与刷新率，同时计算 CVT / CVT-RB / CVT-RBv2 / CEA-861 / DMT / 自定义六种时序，
+      并核算各接口（DP / HDMI / DVI / SDI / RFC4175）的带宽余量。
+      <b>全浏览器本地计算，无任何数据外发。</b>
+    </p>
+    <div class="card" style="margin-bottom:18px">
+      <header><h3>输入参数</h3><span class="spacer"></span><span class="chip" id="vtc-chip">—</span></header>
+      <div class="body">
+        <div class="field-row">
+          <div class="field"><label for="vtc-preset">预定义模式</label>
+            <select id="vtc-preset"><option value="">— 自定义 —</option></select>
+          </div>
+          <div class="field"><label for="vtc-bpc">每分量位数（bpc）</label>
+            <select id="vtc-bpc">
+              <option value="5">5</option><option value="6">6</option>
+              <option value="8" selected>8</option><option value="10">10</option>
+              <option value="12">12</option><option value="16">16</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="vtc-horiz">水平像素</label><input type="number" id="vtc-horiz" value="640" min="1" max="32768" step="1"></div>
+          <div class="field"><label for="vtc-vert">垂直像素</label><input type="number" id="vtc-vert" value="480" min="1" max="32768" step="1"></div>
+          <div class="field"><label for="vtc-refresh">刷新率（Hz）</label><input type="number" id="vtc-refresh" value="60" min="1" max="1000" step="0.01"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="vtc-color">色彩格式</label>
+            <select id="vtc-color">
+              <option value="rgb444" selected>RGB 4:4:4</option>
+              <option value="yuv444">YUV 4:4:4</option>
+              <option value="yuv422">YUV 4:2:2</option>
+              <option value="yuv420">YUV 4:2:0</option>
+            </select>
+          </div>
+          <div class="field"><label for="vtc-margins">安全边距</label>
+            <select id="vtc-margins"><option value="n" selected>否</option><option value="y">是（CVT 边距 1.8%）</option></select>
+          </div>
+          <div class="field"><label for="vtc-interlaced">隔行扫描</label>
+            <select id="vtc-interlaced"><option value="n" selected>否</option><option value="y">是</option></select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="vtc-vopt">视频优化（CVT-RBv2 按 1000/1001）</label>
+            <select id="vtc-vopt"><option value="n" selected>否</option><option value="y">是</option></select>
+          </div>
+          <div class="field"><label for="vtc-chblank">自定义水平消隐（像素）</label><input type="number" id="vtc-chblank" value="80" min="0" max="4096" step="1"></div>
+          <div class="field"><label for="vtc-cvblank">自定义垂直消隐（行）</label><input type="number" id="vtc-cvblank" value="6" min="0" max="2048" step="1"></div>
+        </div>
+      </div>
+    </div>
+    <div class="stack" id="vtc-out"></div>
+  </section>
+
   <!-- ================================================ 学习 Learn ========= -->
   <section class="panel" id="panel-learn">
     <div class="card" style="margin-bottom:18px"><div class="body">
@@ -430,9 +488,10 @@
       <div class="card"><div class="body">
         <h3>使用与开发</h3>
         <div class="kv">
+          <dt>自测</dt><dd>用 Node 或浏览器控制台加载引擎即可跑通预设与校验，详见 README</dd>
           <dt>目录</dt><dd><code>index.html</code> · <code>css/styles.css</code> · <code>js/*.js</code></dd>
           <dt>引擎</dt><dd><code>edid-core.js</code>（常量与工具）· <code>timing.js</code>（CVT/GTF）· <code>edid-decoder.js</code> · <code>edid-encoder.js</code> · <code>edid-validator.js</code></dd>
-          <dt>自测</dt><dd>用 Node 或浏览器控制台加载引擎即可跑通预设与校验，详见 README</dd>
+          <dt>校验</dt><dd>引擎自带 Node 测试脚本，可与在线服务结果逐项比对</dd>
         </div>
         <p class="small muted" style="margin-top:10px">想做二次开发？引擎文件都是普通脚本，暴露 <code>window.EDIDCore / EDIDTiming / EDIDDecoder / EDIDEncoder / EDIDValidator</code>，可以单独取用。</p>
         <div class="btn-row" style="margin-top:10px">
@@ -465,6 +524,8 @@
 
 <script src="js/edid-core.js"></script>
 <script src="js/timing.js"></script>
+<script src="js/vtc-data.js"></script>
+<script src="js/video-timings.js"></script>
 <script src="js/edid-decoder.js"></script>
 <script src="js/edid-encoder.js"></script>
 <script src="js/edid-validator.js"></script>

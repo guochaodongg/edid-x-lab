@@ -41,6 +41,8 @@ edid-x-lab/
 ├── js/
 │   ├── edid-core.js        # 常量表 + 工具（校验和、色度、厂商码、VIC 表…）
 │   ├── timing.js           # CVT / GTF 计算、Modeline、xrandr
+│   ├── vtc-data.js         # DMT(88) 与 CEA-861 VIC(154) 标准时序数据表
+│   ├── video-timings.js    # 多标准时序计算：CVT/RB、DMT/VIC 查表、带宽核算
 │   ├── edid-decoder.js     # 字节流 → 结构化对象
 │   ├── edid-encoder.js     # 模型 → 字节流（含 7 套预设）
 │   ├── edid-validator.js   # 结构 / 语义校验，分级报告
@@ -238,9 +240,12 @@ Windows 上把 `NODE_PATH` 换成 `C:\...\edid-domtest\node_modules` 即可。
 - **HDMI Forum VSDB**（OUI `C4-5D-D8`）只读版本号，不展开其全部能力位。
 - 音频数据块最多 10 个描述符；标准时序最多 8 组；描述符固定 4 个槽位——这些都是 EDID 规范本身的限制。
 - 校验规则以 VESA 规范与 Linux `edid-decode` 的判定为参照，但个别厂商的“非标但可用”做法可能被报为警告，请结合实际情况判断。
+- **时序对比**页中 CEA-861 / DMT 列只覆盖标准表内收录的模式；表内个别条目（如 DMT 0x0F）在参考数据源中即不完整，会显示“—”。自定义模式只约束总消隐量与像素时钟，前后沿按 CVT-RB 布局确定性地分配。隔行模式下 CVT 系列显示场有效行数（规范定义），CEA-861 / DMT 显示整帧行数。
 
 ---
 
 ## 9. 说明
 
-本项目的代码与文案为独立实现，功能对标 edidcraft.com。EDID / CEA-861 / DisplayID / CVT / GTF 的具体细节请以 VESA 与 CTA 官方规范为准。
+本项目的代码与文案为独立实现，功能对标 edidcraft.com。「时序对比」页的功能对标 Tom Verbeure 的
+Video Timings Calculator（其 DMT/VIC 标准时序数据与 CVT 公式来自 VESA/CTA 公开规范，算法经交叉验证对齐）。
+EDID / CEA-861 / DisplayID / CVT / GTF 的具体细节请以 VESA 与 CTA 官方规范为准。

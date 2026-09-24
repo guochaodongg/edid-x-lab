@@ -19,6 +19,7 @@
     val: { hex: '' },
     enc: { model: null, page: 0 },
     tm: { standard: 'cvt', rb: 0, width: 1920, height: 1080, refresh: 60, aspect: 'auto', interlaced: false, margins: false },
+    vtc: { h: 640, v: 480, r: 60, margins: false, interlaced: false, bpc: 8, color: 'rgb444', vopt: false, chblank: 80, cvblank: 6 },
     printPanel: null
   };
 
@@ -1303,6 +1304,247 @@
     tmRender();
   }
 
+  /* ================================================== 时序对比（多标准） ===
+   * 功能复刻自 Tom Verbeure 的 Video Timings Calculator：
+   * 六种时序（CVT / CVT-RB / CVT-RBv2 / CEA-861 / DMT / 自定义）并排对比，
+   * 加上 DP / HDMI / DVI / SDI / RFC4175 接口带宽核算。算法在 video-timings.js。
+   */
+  var VTC_STANDARDS = [
+    { key: 'cvt',     label: 'CVT' },
+    { key: 'cvt_rb',  label: 'CVT-RB' },
+    { key: 'cvt_rb2', label: 'CVT-RBv2' },
+    { key: 'cea',     label: 'CEA-861' },
+    { key: 'dmt',     label: 'DMT' },
+    { key: 'custom',  label: '自定义' }
+  ];
+
+  function vtcReadForm() {
+    state.vtc.h = clamp(Math.round(Number($('#vtc-horiz').value) || 0), 1, 32768);
+    state.vtc.v = clamp(Math.round(Number($('#vtc-vert').value) || 0), 1, 32768);
+    state.vtc.r = clamp(Number($('#vtc-refresh').value) || 60, 1, 1000);
+    state.vtc.margins = $('#vtc-margins').value === 'y';
+    state.vtc.interlaced = $('#vtc-interlaced').value === 'y';
+    state.vtc.bpc = parseInt($('#vtc-bpc').value, 10);
+    state.vtc.color = $('#vtc-color').value;
+    state.vtc.vopt = $('#vtc-vopt').value === 'y';
+    state.vtc.chblank = clamp(Math.round(Number($('#vtc-chblank').value) || 0), 0, 4096);
+    state.vtc.cvblank = clamp(Math.round(Number($('#vtc-cvblank').value) || 0), 0, 2048);
+  }
+
+  /* 与原工具一致的 URL 分享参数（file:// 下 replaceState 可能被拒，静默忽略） */
+  function vtcSyncUrl() {
+    try {
+      var sp = new URLSearchParams();
+      sp.set('horiz_pixels', state.vtc.h);
+      sp.set('vert_pixels', state.vtc.v);
+      sp.set('refresh_rate', state.vtc.r);
+      sp.set('margins', state.vtc.margins);
+      sp.set('interlaced', state.vtc.interlaced);
+      sp.set('bpc', state.vtc.bpc);
+      sp.set('color_fmt', state.vtc.color);
+      sp.set('video_opt', state.vtc.vopt);
+      sp.set('custom_hblank', state.vtc.chblank);
+      sp.set('custom_vblank', state.vtc.cvblank);
+      history.replaceState(null, '', '?' + sp.toString());
+    } catch (e) { /* file:// 等 */
+    }
+  }
+
+  function vtcReadUrl() {
+    try {
+      var q = new URLSearchParams(location.search);
+      function num(name, lo, hi, dflt) {
+        var s = q.get(name);
+        if (s == null || s === '' || !isFinite(Number(s))) return dflt;
+        return clamp(Math.round(Number(s)), lo, hi);
+      }
+      state.vtc.h = num('horiz_pixels', 1, 32768, state.vtc.h);
+      state.vtc.v = num('vert_pixels', 1, 32768, state.vtc.v);
+      state.vtc.r = q.get('refresh_rate') != null && isFinite(Number(q.get('refresh_rate')))
+        ? clamp(Number(q.get('refresh_rate')), 1, 1000) : state.vtc.r;
+      if (q.get('margins') === 'true' || q.get('margins') === 'false') state.vtc.margins = q.get('margins') === 'true';
+      if (q.get('interlaced') === 'true' || q.get('interlaced') === 'false') state.vtc.interlaced = q.get('interlaced') === 'true';
+      state.vtc.bpc = num('bpc', 5, 16, state.vtc.bpc);
+      var cf = q.get('color_fmt');
+      if (['rgb444', 'yuv444', 'yuv422', 'yuv420'].indexOf(cf) >= 0) state.vtc.color = cf;
+      if (q.get('video_opt') === 'true' || q.get('video_opt') === 'false') state.vtc.vopt = q.get('video_opt') === 'true';
+      state.vtc.chblank = num('custom_hblank', 0, 4096, state.vtc.chblank);
+      state.vtc.cvblank = num('custom_vblank', 0, 2048, state.vtc.cvblank);
+    } catch (e) { /* 无 URLSearchParams 环境 */
+    }
+  }
+
+  function vtcSyncFields() {
+    $('#vtc-horiz').value = state.vtc.h;
+    $('#vtc-vert').value = state.vtc.v;
+    $('#vtc-refresh').value = state.vtc.r;
+    $('#vtc-margins').value = state.vtc.margins ? 'y' : 'n';
+    $('#vtc-interlaced').value = state.vtc.interlaced ? 'y' : 'n';
+    $('#vtc-bpc').value = String(state.vtc.bpc);
+    $('#vtc-color').value = state.vtc.color;
+    $('#vtc-vopt').value = state.vtc.vopt ? 'y' : 'n';
+    $('#vtc-chblank').value = state.vtc.chblank;
+    $('#vtc-cvblank').value = state.vtc.cvblank;
+  }
+
+  function f3(x) { return String(Math.round(x * 1000) / 1000); }
+
+  /* 一行参数在六个标准列上的值 */
+  function vtcRow(label, get) {
+    return ['<b>' + label + '</b>'].concat(VTC_STANDARDS.map(function (s) {
+      return get(state.vtc.results[s.key], s.key);
+    }));
+  }
+
+  function vtcRender() {
+    vtcReadForm();
+    vtcSyncUrl();
+    var s = state.vtc;
+    var results = VTC.computeAll(s.h, s.v, s.r, s.margins, s.interlaced, s.vopt, s.chblank, s.cvblank);
+    state.vtc.results = results;
+
+    var hit = VTC_STANDARDS.filter(function (st) { return results[st.key]; }).length;
+    $('#vtc-chip').textContent = s.h + '×' + s.v + '@' + s.r + 'Hz · ' + hit + '/6 标准命中';
+
+    /* ---- 参数矩阵 ---- */
+    function cell(t, key) {
+      if (!t) return '<span class="dim">—</span>';
+      return key(t);
+    }
+    function num(x) { return x; }
+
+    var rows = [];
+    rows.push(vtcRow('宽高比', function (t) { return cell(t, function (x) { return esc(x.aspect); }); }));
+    rows.push(vtcRow('像素时钟 (MHz)', function (t) { return cell(t, function (x) { return '<b>' + f3(x.pclk) + '</b>'; }); }));
+
+    rows.push(vtcRow('H 总', function (t) { return cell(t, function (x) { return num(x.hTotal); }); }));
+    rows.push(vtcRow('H 有效', function (t) { return cell(t, function (x) { return num(x.hActive); }); }));
+    rows.push(vtcRow('H 消隐', function (t) { return cell(t, function (x) { return num(x.hBlank); }); }));
+    rows.push(vtcRow('H 前沿', function (t) { return cell(t, function (x) { return num(x.hFront); }); }));
+    rows.push(vtcRow('H 同步', function (t) { return cell(t, function (x) { return num(x.hSync); }); }));
+    rows.push(vtcRow('H 后沿', function (t) { return cell(t, function (x) { return num(x.hBack); }); }));
+    rows.push(vtcRow('H 极性', function (t) { return cell(t, function (x) { return num(x.hPol); }); }));
+    rows.push(vtcRow('H 频率 (kHz)', function (t) { return cell(t, function (x) { return f3(x.hFreq / 1000); }); }));
+    rows.push(vtcRow('H 周期 (µs)', function (t) { return cell(t, function (x) { return f3(x.hPeriodUs); }); }));
+
+    rows.push(vtcRow('V 总', function (t) { return cell(t, function (x) { return num(x.vTotal); }); }));
+    rows.push(vtcRow('V 有效', function (t) { return cell(t, function (x) { return num(x.vActive); }); }));
+    rows.push(vtcRow('V 消隐', function (t) { return cell(t, function (x) { return num(x.vBlank); }); }));
+    rows.push(vtcRow('V 消隐时长 (µs)', function (t) { return cell(t, function (x) { return num(Math.round(x.vBlankUs)); }); }));
+    rows.push(vtcRow('V 前沿', function (t) { return cell(t, function (x) { return num(x.vFront); }); }));
+    rows.push(vtcRow('V 同步', function (t) { return cell(t, function (x) { return num(x.vSync); }); }));
+    rows.push(vtcRow('V 后沿', function (t) { return cell(t, function (x) { return num(x.vBack); }); }));
+    rows.push(vtcRow('V 极性', function (t) { return cell(t, function (x) { return num(x.vPol); }); }));
+    rows.push(vtcRow('V 频率 (Hz)', function (t) { return cell(t, function (x) { return f3(x.vFreqActual); }); }));
+    rows.push(vtcRow('V 周期 (ms)', function (t) { return cell(t, function (x) { return f3(x.vPeriodMs); }); }));
+
+    var fmtMult = s.color === 'yuv422' ? 2 : s.color === 'yuv420' ? 1.5 : 3;
+    rows.push(vtcRow('峰值带宽 (Mbit/s)', function (t) {
+      return cell(t, function (x) { return num(Math.round(x.pclk * 1000000 * s.bpc * fmtMult / 1000000)); });
+    }));
+    rows.push(vtcRow('行带宽 (Mbit/s)', function (t) {
+      return cell(t, function (x) { return num(Math.round(x.pclk * 1000000 * s.bpc * fmtMult * x.hActive / x.hTotal / 1000000)); });
+    }));
+    rows.push(vtcRow('有效带宽 (Mbit/s)', function (t) {
+      return cell(t, function (x) { return num(Math.round(x.vFreqActual * s.bpc * x.vActive * x.hActive * fmtMult / 1000000)); });
+    }));
+
+    rows.push(vtcRow('DMT ID', function (t, key) {
+      if (key !== 'dmt' || !t) return '';
+      return '0x' + t.dmtId.toString(16).toUpperCase().padStart(2, '0');
+    }));
+    rows.push(vtcRow('Std 2 字节码', function (t, key) {
+      if (key !== 'dmt' || !t || !t.dmt2Byte) return '';
+      return t.dmt2Byte.map(function (b) { return '0x' + b.toString(16); }).join(', ');
+    }));
+    rows.push(vtcRow('CVT 3 字节码', function (t, key) {
+      if (key !== 'dmt' || !t || !t.dmt3Byte) return '';
+      return t.dmt3Byte.map(function (b) { return '0x' + b.toString(16); }).join(', ');
+    }));
+    rows.push(vtcRow('VIC', function (t, key) {
+      if (key !== 'cea' || !t) return '';
+      return '<b>' + t.vic + '</b>';
+    }));
+
+    var head = ['参数'].concat(VTC_STANDARDS.map(function (st) { return '<b>' + st.label + '</b>'; }));
+    var html = R.card('六标准时序对比', R.tableHtml(head, rows),
+      R.chip(s.h + '×' + s.v, 'accent'));
+
+    /* ---- Modeline ---- */
+    var mlRows = VTC_STANDARDS.filter(function (st) { return results[st.key]; }).map(function (st) {
+      var t = results[st.key];
+      var ml = VTC.modeline(t);
+      return ['<b>' + st.label + '</b>',
+        '<code style="word-break:break-all">' + esc(ml) + '</code>',
+        '<button class="sm" data-copy="' + esc(ml) + '">复制</button>'];
+    });
+    html += R.card('Xorg Modeline', R.tableHtml(['标准', '命令', ''], mlRows));
+
+    /* ---- 接口带宽核算 ---- */
+    var bwByStd = {};
+    VTC_STANDARDS.forEach(function (st) {
+      bwByStd[st.key] = results[st.key] ? VTC.bandwidth(results[st.key], s.bpc, s.color) : null;
+    });
+    var bwRows = VTC.TRANSPORTS.map(function (tr) {
+      var row = ['<b>' + esc(tr.name) + '</b>'];
+      VTC_STANDARDS.forEach(function (st) {
+        var list = bwByStd[st.key];
+        if (!list) { row.push('<span class="dim">—</span>'); return; }
+        var r = list.filter(function (x) { return x.id === tr.id; })[0];
+        if (r.restricted) { row.push('<span class="chip err">仅 8bpc RGB</span>'); return; }
+        var txt = (r.ok ? 'Ok' : 'No') + ' (' + r.pct + '%)';
+        var cls = r.ok ? 'ok' : 'err';
+        var extra = '';
+        if (!r.ok && r.dscOk) extra = '<br><span class="chip info">DSC ' + r.dscBpp + 'bpp</span>';
+        row.push('<span class="chip ' + cls + '">' + txt + '</span>' + extra);
+      });
+      return row;
+    });
+    html += R.card('接口带宽支持（峰值 ' + (s.bpc) + 'bpc ' +
+      ({ rgb444: 'RGB 4:4:4', yuv444: 'YUV 4:4:4', yuv422: 'YUV 4:2:2', yuv420: 'YUV 4:2:0' })[s.color] + '）',
+      R.tableHtml(['接口'].concat(VTC_STANDARDS.map(function (st) { return '<b>' + st.label + '</b>'; })), bwRows),
+      R.chip('Ok = 可传输 · No = 超带宽 · DSC = 压缩后可传输', 'info'));
+
+    html += '<p class="small dim">说明：CEA-861 / DMT 列显示 “—” 表示该分辨率不在标准表内（此时可用 CVT 或自定义模式）;' +
+      '自定义模式只保证总消隐量与像素时钟，前后沿按 CVT-RB 布局分配;' +
+      '隔行模式下 CVT 系列的 V 有效为场有效行数（规范定义），CEA-861 / DMT 为整帧行数。' +
+      '带宽数据含各接口的编码开销，DSC 按 8bpp 最低压缩估算。计算逻辑参考 Tom Verbeure 的开源工具。</p>';
+
+    $('#vtc-out').innerHTML = html;
+  }
+
+  function initVTC() {
+    /* 预定义模式下拉 */
+    var sel = $('#vtc-preset');
+    VTC.PRESET_MODES.forEach(function (m) {
+      var o = document.createElement('option');
+      o.value = m.name;
+      o.textContent = m.name + '（' + m.h + '×' + m.v + '）';
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', function () {
+      var name = this.value;
+      if (!name) { vtcRender(); return; }
+      var m = VTC.PRESET_MODES.filter(function (x) { return x.name === name; });
+      if (m.length) {
+        state.vtc.h = m[0].h; state.vtc.v = m[0].v; state.vtc.r = m[0].r;
+        vtcSyncFields();
+      }
+      vtcRender();
+    });
+
+    ['vtc-horiz', 'vtc-vert', 'vtc-refresh', 'vtc-chblank', 'vtc-cvblank'].forEach(function (id) {
+      $('#' + id).addEventListener('input', vtcRender);
+    });
+    ['vtc-margins', 'vtc-interlaced', 'vtc-bpc', 'vtc-color', 'vtc-vopt'].forEach(function (id) {
+      $('#' + id).addEventListener('change', vtcRender);
+    });
+
+    vtcReadUrl();
+    vtcSyncFields();
+    vtcRender();
+  }
+
   function init() {
     var draft = load();
     if (draft) {
@@ -1330,6 +1572,7 @@
     initEncoder();
     initValidator();
     initTiming();
+    initVTC();
 
     $$('nav.tabs button').forEach(function (b) {
       b.addEventListener('click', function () { switchTab(b.getAttribute('data-tab')); });
